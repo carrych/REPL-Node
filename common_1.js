@@ -1,65 +1,20 @@
-//
-//
-//
-//
-// switch (b) {
-//     case '--create':
-// if (!args[3]) {
-//     let value = args[1],
-//         typeOfcurrency = args[2],
-//         newAccount = new Account(value, typeOfcurrency);
-//     tempArr.push(newAccount);
-//     if (tempArr.length > 0)
-//         addAccount(arrOfAccounts, tempArr);
-//     newAccount.showAccountInfo();
-// }
-// else if (args[3]) {
-//     let value = args[1],
-//         typeOfcurrency = args[2],
-//         newAccount = new Account(value, typeOfcurrency);
-//     switch (args[3]) {
-//         case '+':
-//             newAccount.addMoney(parseInt(args[4]));
-//             newAccount.showAccountInfo();
-//             break;
-//         case '-':
-//             newAccount.getMoney(parseInt(args[4]));
-//             newAccount.showAccountInfo();
-//             break;
-//         default:
-//             console.log('what??!');
-//             break;
-//     }
-// }
-//         console.log('use --help');
-//         break;
-//     default:
-//         console.log('use --help');
-//         break;
-// }
-//
-//
-// function addAccount(in_arr, data) {
-//     in_arr[addAccount.cntr] = data;
-//     addAccount.cntr++;
-// }
-//
-// addAccount.cntr = 0;
-// console.log(arrOfAccounts);
 const Account = require('./modules/classAccount'),
-    rt = require('console-ultimate'),
+    DiscountCard = require('./modules/classDiscountCard'),
+    consoleUltimate = require('console-ultimate'),
     chalk = require('chalk'),
     repl = require('repl'),
     replServer = repl.start({prompt: '> '}),
     success = chalk.keyword('cyan'),
     info = chalk.keyword('magenta'),
-    checkId = require('./modules/check');
+    checkId = require('./modules/check'),
+    checkBalance = require('./modules/check');
 
 let currentAcc = {},
-    arrOfAccounts = [];
+    arrOfAccounts = [],
+    newDiscountCard = new DiscountCard(777);
 
 replServer.defineCommand(`create`, {
-    help: 'create account and added balance and type of currency',
+    help: 'Create account and added balance and type of currency',
     action(data) {
         this.clearBufferedCommand();
         let temp = data.split(' '),
@@ -79,86 +34,123 @@ replServer.defineCommand(`create`, {
     }
 });
 
-replServer.defineCommand('get', function (data) {
-    this.clearBufferedCommand();
-    let temp = data.split(' '),
-        value = temp[0];
-    if (value < currentAcc.value) {
-        currentAcc.value -= value;
-        console.log(success('Successful operation!'));
-    }
-    else console.warn('More gold is required!');
-    arrOfAccounts[currentAcc.accId] = currentAcc;
-    this.displayPrompt();
-});
-
-replServer.defineCommand('add', function (data) {
-    this.clearBufferedCommand();
-    let temp = data.split(' '),
-        value = temp[0];
-    if (value > 0) {
-        currentAcc.value += parseInt(value);
-        console.log(success('Successful operation!'));
-    }
-    else console.error('Wrong value!');
-    arrOfAccounts[currentAcc.accId] = currentAcc;
-    this.displayPrompt();
-});
-
-replServer.defineCommand('send', function (data) {
-    this.clearBufferedCommand();
-    let temp = data.split(' '),
-        accId_1 = temp[0],
-        accId_2 = temp[1],
-        value = temp[2];
-    if (checkId(arrOfAccounts, accId_1, accId_2)) {
-        if (arrOfAccounts[accId_1].value > value) {
-            arrOfAccounts[accId_1].value -= value;
-            arrOfAccounts[accId_2].value += parseInt(value);
-            console.log(success(`Successful operation!`));
+replServer.defineCommand('get', {
+    help: 'Get money from the account',
+    action(data) {
+        this.clearBufferedCommand();
+        let temp = data.split(' '),
+            value = temp[0];
+        if (checkBalance(value, currentAcc.value)) {
+            currentAcc.value -= value;
+            console.log(success('Successful operation!'));
         }
-        else console.warn('More gold is required for transaction!');
+        else console.warn('More gold is required!');
+        arrOfAccounts[currentAcc.accId] = currentAcc;
+        this.displayPrompt();
     }
-    else console.error('One of id`s is wrong! Check your data ...');
-    this.displayPrompt();
 });
 
-replServer.defineCommand('change', function (data) {
-    this.clearBufferedCommand();
-    let temp = data.split(' '),
-        accId = temp[0];
-    if (checkId(arrOfAccounts, accId)) {
-        currentAcc.accId = accId;
-        currentAcc.value = arrOfAccounts[accId].value;
-        currentAcc.typeOfCurrency = arrOfAccounts[accId].typeOfCurrency;
-        console.log(success('Successful operation!'));
-        console.log(info(`Your current account: ${currentAcc.accId}`))
+replServer.defineCommand('add', {
+    help: 'Add money to the account',
+    action(data) {
+        this.clearBufferedCommand();
+        let temp = data.split(' '),
+            value = temp[0];
+        if (value > 0) {
+            currentAcc.value += parseInt(value);
+            console.log(success('Successful operation!'));
+        }
+        else console.error('Wrong value!');
+        arrOfAccounts[currentAcc.accId] = currentAcc;
+        this.displayPrompt();
     }
-    else console.error('One of id`s is wrong! Check your data ...');
-    this.displayPrompt();
 });
 
-replServer.defineCommand('show', function () {
-    this.clearBufferedCommand();
-    for (let key in arrOfAccounts)
-        console.log(info(`Acc: ${key}; Acc data: ${arrOfAccounts[key].value} ${arrOfAccounts[key].typeOfCurrency}`));
-    this.displayPrompt();
+replServer.defineCommand('send', {
+    help: 'Transaction from account to another account',
+    action(data) {
+        this.clearBufferedCommand();
+        let temp = data.split(' '),
+            value = temp[0],
+            accId = temp[1];
+        if (checkId(arrOfAccounts, accId)) {
+            if (arrOfAccounts[accId].value > value) {
+                currentAcc.value -= value;
+                arrOfAccounts[accId].value += parseInt(value);
+                console.log(success(`Successful operation!`));
+                arrOfAccounts[currentAcc.accId] = currentAcc;
+            }
+            else console.warn('More gold is required for transaction!');
+        }
+        else console.error('One of id`s is wrong! Check your data ...');
+        this.displayPrompt();
+    }
 });
 
-replServer.defineCommand('balance', function () {
-    this.clearBufferedCommand();
-    console.log(info(`Balance: ${currentAcc.value}`));
-    this.displayPrompt();
+replServer.defineCommand('change', {
+    help: 'Change current account',
+    action(data) {
+        this.clearBufferedCommand();
+        let temp = data.split(' '),
+            accId = temp[0];
+        if (checkId(arrOfAccounts, accId)) {
+            currentAcc.accId = accId;
+            currentAcc.value = arrOfAccounts[accId].value;
+            currentAcc.typeOfCurrency = arrOfAccounts[accId].typeOfCurrency;
+            console.log(success('Successful operation!'));
+            console.log(info(`Your current account: ${currentAcc.accId}`))
+        }
+        else console.error('One of id`s is wrong! Check your data ...');
+        this.displayPrompt();
+    }
 });
 
-replServer.defineCommand('pay', function () {
-    this.clearBufferedCommand();
-
+replServer.defineCommand('show', {
+    help: 'Show information about current account',
+    action() {
+        this.clearBufferedCommand();
+        for (let key in arrOfAccounts)
+            console.log(info(`Acc id: ${key}; Acc balance: ${arrOfAccounts[key].value} ${arrOfAccounts[key].typeOfCurrency}`));
+        this.displayPrompt();
+    }
 });
 
-replServer.defineCommand('exit', function () {
-    this.clearBufferedCommand();
-    console.warn('Goodbye!');
-    this.close();
+replServer.defineCommand('balance', {
+    help: 'Show balance of account',
+    action() {
+        this.clearBufferedCommand();
+        console.log(info(`Balance: ${currentAcc.value}${currentAcc.typeOfCurrency}`));
+        this.displayPrompt();
+    }
+});
+
+replServer.defineCommand('pay', {
+    help: 'Pay bills from current account. Key: -y - we have discount; -n - discount is absent',
+    action(data) {
+        this.clearBufferedCommand();
+        let temp = data.split(' '),
+            value = temp[0],
+            key = temp[1];
+        if (key === '-n')
+            currentAcc.value -= value;
+        else if (key === '-y') {
+            console.log(success('Successful operation!'));
+            currentAcc.value -= newDiscountCard.makeDiscount(value);
+            console.log(success(`Balance: ${currentAcc.value}${currentAcc.typeOfCurrency}`));
+            newDiscountCard.set_amountOfPurchases(value);
+            newDiscountCard.showDiscountInfo(info);
+            newDiscountCard.showNextPointForDiscount(info);
+        }
+        arrOfAccounts[currentAcc.accId] = currentAcc;
+    }
+});
+
+replServer.defineCommand('exit', {
+    help: 'Exit from program',
+    action() {
+        this.clearBufferedCommand();
+        console.warn('Goodbye!');
+        this.close();
+    }
 });
 

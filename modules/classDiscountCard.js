@@ -1,35 +1,31 @@
-class Account {
-    constructor(value, typeOfcurrency) {
-        this.value = parseInt(value);
-        this.typeOfCurrency = typeOfcurrency;
-        this.accId = Math.floor(Math.random() * 100000000);
+class DiscountCard {
+    constructor(cardId) {
+        this.discount = 1;
+        this.amountOfPurchases = 0;
+        this.cardId = cardId;
     }
 
-    showAccountInfo() {
-        console.log(`Balance:${this.value}, Type of currency:${this.typeOfCurrency}, Account number:${this.accId}`);
+    showDiscountInfo(in_info) {
+        console.log(in_info(`Card:${this.cardId}, Discount:${this.discount} %`));
     }
 
-    getMoney(howMuch) {
-        if (howMuch < 0) {
-            console.log(`Wrong data!`);
-        }
-        else if (howMuch > this.value)
-            console.log(`Not enought funds! Your balance: ${this.value}`);
-        else {
-            this.value -= howMuch;
-            console.log(`Your balance: ${this.value}`);
-        }
+    makeDiscount(in_value) {
+        return in_value - (in_value * this.discount * 0.01);
     }
 
-    addMoney(howMuch) {
-        if (howMuch < 0) {
-            console.log(`Wrong data!`);
-        }
-        else {
-            this.value += howMuch;
-            console.log(`Your balance: ${this.value}`);
-        }
+    set_amountOfPurchases(value) {
+        this.amountOfPurchases += parseInt(value);
+        console.log(Math.floor(parseInt(this.amountOfPurchases) / 1000));
+        this.discount += Math.floor(parseInt(this.amountOfPurchases) / 1000);
+        if (this.amountOfPurchases > 1000)
+            this.amountOfPurchases %= 1000;
+    }
+
+    showNextPointForDiscount(in_info) {
+        if (this.amountOfPurchases < 1000)
+            console.log(in_info(`Your discount:${this.discount} %; Next point for discount after:${1000 - this.amountOfPurchases}`));
+        else console.log(in_info(`Your discount:${this.discount} %; Next point for discount after:${this.amountOfPurchases % 1000}`));
     }
 }
 
-module.exports = Account;
+module.exports = DiscountCard;
